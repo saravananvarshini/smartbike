@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Smart Bike Service - Login</title>
+<style>
+body{
+    margin:0;
+    font-family:poppins, sans-serif;
+    background:linear-gradient(120deg,#6AB3F8,#E3ECFF);
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    position:relative;
+}
+#container{
+    width:400px;background:white;padding:25px;border-radius:15px;
+    box-shadow:0 0 20px rgba(0,0,0,0.3);
+    position:relative;
+    z-index:2;
+}
+h2{text-align:center;}
+input{
+    width:90%;padding:12px;margin:8px 0;border-radius:6px;border:1px solid #bbb;
+}
+button{
+    width:95%;padding:12px;background:#007bff;border:none;border-radius:6px;color:white;
+    font-size:16px;cursor:pointer;margin-top:10px;
+}
+button:hover{background:#0057c9}
+.switch{color:#0057c9;text-align:center;cursor:pointer;margin-top:10px;}
+
+/* Welcome Message Styles */
+#welcomeMessage {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    animation: fadeIn 0.5s ease;
+}
+
+.welcome-content {
+    background: white;
+    padding: 40px;
+    border-radius: 20px;
+    text-align: center;
+    max-width: 500px;
+    width: 80%;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.5s ease;
+}
+
+.welcome-content h1 {
+    color: #007bff;
+    margin-bottom: 15px;
+    font-size: 2.2rem;
+}
+
+.welcome-content p {
+    color: #333;
+    margin-bottom: 25px;
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
+#enterBtn {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    font-size: 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+#enterBtn:hover {
+    background: #0057c9;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 87, 201, 0.3);
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { 
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Floating elements animation */
+.floating {
+    position: absolute;
+    z-index: 1;
+    opacity: 0.1;
+}
+
+.bike-icon {
+    font-size: 8rem;
+    color: #007bff;
+    animation: float 6s ease-in-out infinite;
+}
+
+.bike1 {
+    top: 10%;
+    left: 10%;
+    animation-delay: 0s;
+}
+
+.bike2 {
+    bottom: 10%;
+    right: 10%;
+    animation-delay: 2s;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+}
+</style>
+</head>
+<body>
+
+<!-- Welcome Message Modal -->
+<div id="welcomeMessage">
+    <div class="welcome-content">
+        <h1>🚲 Welcome to Smart Bike Service!</h1>
+        <p>Your one-stop solution for all bicycle maintenance and repair needs. 
+           Experience hassle-free service booking, real-time tracking, and expert 
+           technicians at your doorstep.</p>
+        <p><strong>Login to get started or create a new account!</strong></p>
+        <button id="enterBtn">Enter Smart Bike Service</button>
+    </div>
+</div>
+
+<!-- Floating decorative elements -->
+<div class="floating bike1">🚲</div>
+<div class="floating bike2">🚴‍♂️</div>
+
+<div id="container">
+    <h2>Welcome back please Login</h2>
+    <input id="email" placeholder="Enter Email">
+    <input id="password" type="password" placeholder="Enter Password">
+    <button onclick="login()">Login</button>
+    <p class="switch" onclick="register()">Don't have account? Create</p>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, signOut } 
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyDh3ykR3WFy-5dfamR9UlI3FHf-JXA5gRA",
+    authDomain: "smartbikeservice-e9706.firebaseapp.com",
+    projectId: "smartbikeservice-e9706",
+    storageBucket: "smartbikeservice-e9706.firebasestorage.app",
+    messagingSenderId: "849251673308",
+    appId: "1:849251673308:web:66eb5364214602320ac019"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth();
+
+// Hide welcome message on button click
+document.getElementById('enterBtn').addEventListener('click', function() {
+    document.getElementById('welcomeMessage').style.display = 'none';
+});
+
+// Optional: Hide welcome message when clicking outside
+document.getElementById('welcomeMessage').addEventListener('click', function(e) {
+    if (e.target === this) {
+        this.style.display = 'none';
+    }
+});
+
+// ---------------- LOGIN -----------------
+window.login = function(){
+    let email = document.getElementById("email").value;
+    let pass = document.getElementById("password").value;
+
+    if(!email || !pass) return alert("Fill Email and Password!");
+
+    signInWithEmailAndPassword(auth,email,pass)
+    .then(res=>{
+        localStorage.setItem("role","user");
+        window.location.href="service.html";
+    })
+    .catch(err=> alert("Invalid Login! Create Account if new."));
+}
+
+// ---------------- SIGNUP -----------------
+window.register = function(){
+    let email = prompt("Enter Email:");
+    let password = prompt("Choose Password:");
+    let name = prompt("Enter Your Name:");
+
+    if(!email || !password || !name) return alert("All fields required!");
+
+    createUserWithEmailAndPassword(auth,email,password)
+    .then(()=>{
+        updateProfile(auth.currentUser,{displayName:name});
+        localStorage.setItem("role","user");
+        window.location.href="service.html";
+    })
+    .catch(e=>alert(e.message));
+}
+
+// Show welcome message on page load (it's already visible by default)
+window.addEventListener('load', function() {
+    // Welcome message is already visible, but we can add any additional logic here
+    console.log("Welcome to Smart Bike Service!");
+});
+</script>
+
+</body>
+</html>
