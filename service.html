@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Bike Service System</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); margin: 0; padding: 0; }
+        .page { display: none; padding: 20px; }
+        .active { display: block; }
+        .btn { width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; transition: transform 0.2s; }
+        .btn:hover { transform: translateY(-2px); }
+        .header { text-align: center; padding: 20px; font-size: 22px; font-weight: bold; color: #2575fc; }
+        .welcome-header { 
+            text-align: center; 
+            padding: 25px; 
+            background: linear-gradient(135deg, #2575fc 0%, #6a11cb 100%); 
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .box { background: white; padding: 30px; border-radius: 15px; box-shadow: 0px 10px 30px rgba(0,0,0,0.15); max-width: 500px; margin: auto; }
+        .avail-btn { background: linear-gradient(135deg, #2575fc 0%, #6a11cb 100%); color: white; }
+        .book-btn { background: linear-gradient(135deg, #ff512f 0%, #dd2476 100%); color: white; }
+        .ml-btn { background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%); color: white; }
+        .back-btn { background: #333; color: white; }
+        .logout-btn { 
+            background: linear-gradient(135deg, #2575fc 0%, #1a73e8 100%); 
+            color: white;
+            margin-top: 30px;
+            padding: 15px;
+            font-size: 18px;
+            width: 100%;
+        }
+        .status-btn { background: linear-gradient(135deg, #9c27b0 0%, #673ab7 100%); color: white; }
+        input, select { padding: 12px; margin-top: 5px; width: 100%; box-sizing: border-box; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
+        ul { margin-top: 5px; padding-left: 20px; }
+        .top-location { 
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); 
+            padding: 15px; 
+            border-radius: 10px; 
+            margin-bottom: 20px; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
+            text-align: center; 
+            font-weight: bold;
+            border-left: 5px solid #2575fc;
+        }
+        .loading { color: #666; font-style: italic; text-align: center; padding: 20px; }
+        .error { color: #ff4444; font-weight: bold; background: #ffebee; padding: 15px; border-radius: 8px; border-left: 5px solid #ff4444; }
+        .success { color: #00C851; font-weight: bold; background: #e8f5e9; padding: 15px; border-radius: 8px; border-left: 5px solid #00C851; }
+        .item { background: #f8f9fa; padding: 20px; margin: 15px 0; border-radius: 10px; border-left: 5px solid #2575fc; box-shadow: 0 3px 10px rgba(0,0,0,0.08); transition: transform 0.2s; }
+        .item:hover { transform: translateX(5px); }
+        .field { margin: 8px 0; padding: 5px 0; display: flex; justify-content: space-between; border-bottom: 1px dashed #eee; }
+        .field-name { font-weight: bold; color: #333; min-width: 150px; }
+        .field-value { color: #555; text-align: right; flex: 1; }
+        .status-pending { border-left-color: #ff9800; background: #fff3e0; }
+        .status-completed { border-left-color: #4caf50; background: #e8f5e9; }
+        .status-inprogress { border-left-color: #2196f3; background: #e3f2fd; }
+        .bill-details { background: #e8f5e9; padding: 15px; border-radius: 8px; margin-top: 10px; border: 2px dashed #4caf50; }
+        .service-details { background: #e3f2fd; padding: 15px; border-radius: 8px; margin-top: 10px; border: 2px dashed #2196f3; }
+        .status-badge {
+            display: inline-block;
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .badge-pending { background: #ff9800; color: white; }
+        .badge-completed { background: #4caf50; color: white; }
+        .badge-inprogress { background: #2196f3; color: white; }
+    </style>
+</head>
+<body>
+
+<!-- PAGE 1: DISTRICT + CITY SELECTION -->
+<div id="page-location" class="page active">
+    <div class="welcome-header">Welcome Back! 🏍️<br><span style="font-size: 18px;">Smart Bike Service please select location</span></div>
+    <div class="box">
+        <label>Select District:</label>
+        <select id="district" onchange="updateCities()">
+            <option value="">-- Select District --</option>
+            <option value="erode">Erode</option>
+            <option value="chennai">Chennai</option>
+        </select>
+        <br><br>
+
+        <label>Select City:</label>
+        <select id="city">
+            <option value="">-- Select City --</option>
+        </select>
+        <br><br>
+
+        <button class="btn avail-btn" onclick="goServicePage()">Continue →</button>
+        
+        <!-- LOGOUT BUTTON AT BOTTOM -->
+        <button class="btn logout-btn" onclick="logout()">🚪 Logout</button>
+    </div>
+</div>
+
+<!-- PAGE 2: SERVICE OPTIONS -->
+<div id="page-services" class="page">
+    <div class="welcome-header">Smart Bike Service System</div>
+    <div class="top-location" id="showLocation"></div>
+    <div class="box">
+        <button class="btn avail-btn" onclick="showPage('page-showroom'); listenShowroom();">🏢 Showroom Availability</button>
+        <button class="btn avail-btn" onclick="showPage('page-mechanic'); listenMechanics();">🛠 Mechanic Availability</button>
+        <button class="btn book-btn" onclick="showPage('page-booking')">📅 Service Booking</button>
+        <button class="btn ml-btn" onclick="showPage('page-ml')">🔧 Spare Parts – Remaining Life</button>
+        <button class="btn status-btn" onclick="showPage('page-status'); checkAllServiceData();">📋 Service Status</button>
+        <button class="btn back-btn" onclick="showPage('page-location')">← Back</button>
+        
+        <!-- LOGOUT BUTTON AT BOTTOM -->
+        <button class="btn logout-btn" onclick="logout()">🚪 Logout</button>
+    </div>
+</div>
+
+<!-- PAGE 3: SHOWROOM AVAILABILITY -->
+<div id="page-showroom" class="page">
+    <div class="welcome-header">🏢 Showroom Availability</div>
+    <div class="top-location" id="showroomLocation"></div>
+    <div class="box">
+        <h3>Available Showrooms:</h3>
+        <div id="showroomList" class="loading">Loading showrooms...</div>
+        <button class="btn back-btn" onclick="showPage('page-services')">← Back</button>
+    </div>
+</div>
+
+<!-- PAGE 4: MECHANIC AVAILABILITY -->
+<div id="page-mechanic" class="page">
+    <div class="welcome-header">🛠 Mechanic Availability</div>
+    <div class="top-location" id="mechanicLocation"></div>
+    <div class="box">
+        <h3>Available Mechanics:</h3>
+        <div id="mechanicList" class="loading">Loading mechanics...</div>
+        <button class="btn back-btn" onclick="showPage('page-services')">← Back</button>
+    </div>
+</div>
+
+<!-- PAGE 5: BOOKING -->
+<div id="page-booking" class="page">
+    <div class="welcome-header">📅 Service Booking</div>
+    <div class="top-location" id="showLocation3"></div>
+    <div class="box">
+        <label>Your Name:</label><input type="text" id="name">
+        <label>Phone Number:</label><input type="text" id="phone">
+        <label>Bike Model:</label><input type="text" id="model">
+        <label>Bike Number:</label><input type="text" id="bikeNumber">
+        <label>Date of Service:</label><input type="date" id="serviceDate">
+        <button class="btn book-btn" onclick="bookService()">Book Now</button>
+        <button class="btn back-btn" onclick="showPage('page-services')">← Back</button>
+    </div>
+</div>
+
+<!-- PAGE 6: ML PREDICTION -->
+<div id="page-ml" class="page">
+    <div class="welcome-header">🔧 Spare Parts – Remaining Life Prediction</div>
+    <div class="top-location" id="showLocation4"></div>
+    <div class="box">
+        <input type="file" accept="image/*" onchange="loadImage(event)" id="fileInput"enabled><br><br>
+        <img id="preview" width="250">
+        <h3 id="result"></h3>
+        <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.21.0/dist/tf.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
+        <script>
+            let model;
+            const modelURL = "tm-my-image-model/model.json";
+            const metadataURL = "tm-my-image-model/metadata.json";
+            async function loadModel() {
+                model = await tmImage.load(modelURL, metadataURL);
+                document.getElementById("fileInput").disabled = false;
+            }
+            loadModel();
+            function loadImage(e) {
+                const img = document.getElementById("preview");
+                img.src = URL.createObjectURL(e.target.files[0]);
+                img.onload = () => predict();
+            }
+            async function predict() {
+                const img = document.getElementById("preview");
+                const predictions = await model.predict(img);
+                predictions.sort((a, b) => b.probability - a.probability);
+                const best = predictions[0];
+                const numbers = best.className.match(/\d+/g);
+                const from = numbers[0];
+                const to = numbers[1];
+                const clean = best.className.toLowerCase().replace(/[^a-z]/g, "");
+                let msg = "";
+                if (clean.includes("tyre")) msg = `Tyre Remaining Life: ${from} to ${to} km`;
+                else if (clean.includes("airfilter")) msg = `Air Filter Remaining Life: ${from} to ${to} km`;
+                document.getElementById("result").innerHTML =
+                    msg + " (" + (best.probability * 100).toFixed(2) + "%)";
+            }
+        </script>
+        <button class="btn back-btn" onclick="showPage('page-services')">← Back</button>
+    </div>
+</div>
+
+<!-- PAGE 7: SERVICE STATUS -->
+<div id="page-status" class="page">
+    <div class="welcome-header">📋 Service Status</div>
+    <div class="box">
+        <h3>Check Your Service Status</h3>
+        <p>Enter your phone number to check your service details:</p>
+        <label>Phone Number:</label>
+        <input type="text" id="statusPhone" placeholder="Enter registered phone number">
+        <button class="btn status-btn" onclick="checkServiceStatus()">Check Status</button>
+        
+        <button class="btn back-btn" onclick="showPage('page-services')">← Back</button>
+        
+        <div id="statusResults" style="margin-top: 20px;"></div>
+    </div>
+</div>
+
+<!-- Firebase Module Integration -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+import { getFirestore, collection, onSnapshot, addDoc, getDocs, query, where } 
+from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+
+// YOUR FIREBASE CONFIG
+const firebaseConfig = {
+    apiKey: "AIzaSyDh3ykR3WFy-5dfamR9UlI3FHf-JXA5gRA",
+    authDomain: "smartbikeservice-e9706.firebaseapp.com",
+    projectId: "smartbikeservice-e9706",
+    storageBucket: "smartbikeservice-e9706.firebasestorage.app",
+    messagingSenderId: "849251673308",
+    appId: "1:849251673308:web:66eb5364214602320ac019"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+console.log("✅ Firebase initialized successfully!");
+
+// GLOBAL FUNCTIONS
+window.listenShowroom = listenShowroom;
+window.listenMechanics = listenMechanics;
+window.bookService = bookService;
+window.checkServiceStatus = checkServiceStatus;
+window.checkAllServiceData = checkAllServiceData;
+
+// AUTO CREATE SERVICE STATUS DATA ON PAGE LOAD
+async function autoCreateServiceData() {
+    try {
+        console.log("🔄 Checking and creating service data...");
+        
+        const snapshot = await getDocs(collection(db, "servicestatus"));
+        
+        if (snapshot.empty) {
+            console.log("📝 AUTO-CREATING service status data...");
+            
+            // Create comprehensive test data
+            const serviceData = [
+                {
+                    phone: "9876543210",
+                    customerName: "Ramesh Kumar",
+                    customerEmail: "ramesh.kumar@email.com",
+                    bikeModel: "Yamaha R15 V3",
+                    bikeNumber: "TN37AB1234",
+                    bikeYear: "2022",
+                    serviceDate: "2024-03-20",
+                    serviceType: "General Service",
+                    status: "completed",
+                    servicesPerformed: [
+                        "Engine Oil Change - ₹450",
+                        "Brake Pad Replacement - ₹800", 
+                        "Air Filter Cleaning - ₹300",
+                        "Chain Lubrication - ₹150"
+                    ],
+                    totalBill: 2850,
+                    paymentStatus: "paid",
+                    paymentMethod: "UPI",
+                    serviceCenter: "Erode Bike Masters",
+                    serviceCenterAddress: "123 Main Road, Gobichettipalayam",
+                    mechanicName: "Suresh Babu",
+                    mechanicExperience: "3 years",
+                    completedDate: "2024-03-21",
+                    nextServiceDate: "2024-06-20",
+                    warranty: "30 days",
+                    notes: "Bike ready for pickup. All services completed successfully. Customer satisfied.",
+                    serviceRating: "4.5/5",
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                },
+                {
+                    phone: "9876543210",
+                    customerName: "Ramesh Kumar",
+                    customerEmail: "ramesh.kumar@email.com",
+                    bikeModel: "Yamaha R15 V3",
+                    bikeNumber: "TN37AB1234",
+                    bikeYear: "2022",
+                    serviceDate: "2024-04-01",
+                    serviceType: "Major Service",
+                    status: "inprogress",
+                    servicesPerformed: [
+                        "Engine Tuning",
+                        "Clutch Plate Replacement"
+                    ],
+                    estimatedBill: 5200,
+                    paymentStatus: "advance paid",
+                    paymentMethod: "Cash",
+                    serviceCenter: "Erode Bike Masters",
+                    serviceCenterAddress: "123 Main Road, Gobichettipalayam",
+                    mechanicName: "Ramesh Kumar",
+                    mechanicExperience: "5 years",
+                    estimatedCompletion: "2024-04-03",
+                    notes: "Waiting for spare parts. Will complete in 2 days. Customer notified.",
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                },
+                {
+                    phone: "9876543211",
+                    customerName: "Priya Sharma",
+                    customerEmail: "priya.sharma@email.com",
+                    bikeModel: "Honda Activa 6G",
+                    bikeNumber: "TN37CD5678",
+                    bikeYear: "2023",
+                    serviceDate: "2024-04-05",
+                    serviceType: "Annual Maintenance",
+                    status: "pending",
+                    servicesRequested: [
+                        "Full Service Package",
+                        "Battery Check and Replacement",
+                        "Tyre Replacement (Front)"
+                    ],
+                    serviceCenter: "Sathy Bike Center",
+                    serviceCenterAddress: "456 Gandhi Road, Sathy",
+                    appointmentTime: "10:30 AM",
+                    estimatedBill: 3800,
+                    notes: "Scheduled for next week. Please bring RC book and insurance papers.",
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                },
+                {
+                    phone: "9876543212",
+                    customerName: "Rajesh Kumar",
+                    customerEmail: "rajesh.kumar@email.com",
+                    bikeModel: "Royal Enfield Classic 350",
+                    bikeNumber: "TN01EF9012",
+                    bikeYear: "2021",
+                    serviceDate: "2024-03-15",
+                    serviceType: "Engine Overhaul",
+                    status: "completed",
+                    servicesPerformed: [
+                        "Engine Rebuilding - ₹4000",
+                        "New Piston Kit - ₹2500",
+                        "Carburetor Cleaning - ₹800",
+                        "Electrical Check - ₹1200"
+                    ],
+                    totalBill: 8500,
+                    paymentStatus: "paid",
+                    paymentMethod: "Card",
+                    serviceCenter: "Chennai Speed Bikes",
+                    serviceCenterAddress: "789 Mount Road, Thambaram",
+                    mechanicName: "Ramesh Kumar",
+                    mechanicExperience: "5 years",
+                    completedDate: "2024-03-18",
+                    nextServiceDate: "2024-09-15",
+                    warranty: "60 days",
+                    notes: "Major repair completed. Test drive successful. Bike performance improved by 40%.",
+                    serviceRating: "5/5",
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                },
+                {
+                    phone: "9876543213",
+                    customerName: "Suresh Kumar",
+                    customerEmail: "suresh.kumar@email.com",
+                    bikeModel: "TVS Apache RTR 160",
+                    bikeNumber: "TN37GH3456",
+                    bikeYear: "2020",
+                    serviceDate: "2024-03-28",
+                    serviceType: "Accident Repair",
+                    status: "inprogress",
+                    servicesPerformed: [
+                        "Fork Repair",
+                        "Headlight Replacement",
+                        "Paint Work"
+                    ],
+                    estimatedBill: 6500,
+                    paymentStatus: "insurance claimed",
+                    insuranceCompany: "New India Assurance",
+                    claimNumber: "CLAIM2024032801",
+                    serviceCenter: "Erode Bike Masters",
+                    serviceCenterAddress: "123 Main Road, Gobichettipalayam",
+                    mechanicName: "Suresh Babu",
+                    mechanicExperience: "3 years",
+                    estimatedCompletion: "2024-04-02",
+                    notes: "Insurance approval received. Repair in progress. Estimated completion in 5 days.",
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            ];
+            
+            // Add all records
+            for (const data of serviceData) {
+                await addDoc(collection(db, "servicestatus"), data);
+            }
+            
+            console.log("✅ AUTO-CREATED: 5 service status records in servicestatus collection!");
+        } else {
+            console.log("✅ Service status data exists:", snapshot.size, "documents");
+        }
+        
+    } catch (error) {
+        console.error("❌ Error creating service data:", error);
+    }
+}
+
+// Check all service data on page load
+async function checkAllServiceData() {
+    const resultsDiv = document.getElementById("statusResults");
+    resultsDiv.innerHTML = "<div class='loading'>🔍 Loading service data...</div>";
+    
+    try {
+        const snapshot = await getDocs(collection(db, "servicestatus"));
+        
+        if (snapshot.empty) {
+            // Auto create data if empty
+            await autoCreateServiceData();
+            
+            resultsDiv.innerHTML = `
+                <div class="success">
+                    <h4>✅ Data Auto-Created!</h4>
+                    <p>Test service data has been automatically created in Firebase.</p>
+                    <p>Available phone numbers:</p>
+                    <ul style="text-align: left; margin-top: 10px;">
+                        <li><strong>9876543210</strong> - 2 records (1 Completed, 1 In Progress)</li>
+                        <li><strong>9876543211</strong> - 1 record (Pending)</li>
+                        <li><strong>9876543212</strong> - 1 record (Completed)</li>
+                        <li><strong>9876543213</strong> - 1 record (In Progress)</li>
+                    </ul>
+                    <p style="margin-top: 15px;">Enter a phone number above and click "Check Status"</p>
+                </div>`;
+        }
+    } catch (error) {
+        console.error("❌ Error checking data:", error);
+        resultsDiv.innerHTML = `<div class="error">Error loading data: ${error.message}</div>`;
+    }
+}
+
+// Check Service Status Function
+async function checkServiceStatus() {
+    const phone = document.getElementById("statusPhone").value.trim();
+    const resultsDiv = document.getElementById("statusResults");
+    
+    if (!phone) {
+        resultsDiv.innerHTML = `
+            <div class="error">
+                <h4>⚠ Phone Number Required</h4>
+                <p>Please enter your phone number to check service status.</p>
+                <p style="margin-top: 10px;">
+                    <strong>Test Phone Numbers:</strong><br>
+                    9876543210, 9876543211, 9876543212, 9876543213
+                </p>
+            </div>`;
+        return;
+    }
+    
+    resultsDiv.innerHTML = "<div class='loading'>🔍 Searching for service records...</div>";
+    
+    try {
+        // Query Firestore for service status
+        const q = query(collection(db, "servicestatus"), where("phone", "==", phone));
+        const querySnapshot = await getDocs(q);
+        
+        if (querySnapshot.empty) {
+            resultsDiv.innerHTML = `
+                <div class="error">
+                    <h4>📭 No Service Records Found</h4>
+                    <p>No service records found for phone: <strong>${phone}</strong></p>
+                    
+                </div>`;
+            return;
+        }
+        
+        // Display all records
+        resultsDiv.innerHTML = `<h3>📋 Service History for ${phone} (${querySnapshot.size} records)</h3>`;
+        
+        // Sort by date (newest first)
+        const sortedDocs = [];
+        querySnapshot.forEach((doc) => {
+            sortedDocs.push({ id: doc.id, data: doc.data() });
+        });
+        
+        sortedDocs.sort((a, b) => (b.data.serviceDate || "").localeCompare(a.data.serviceDate || ""));
+        
+        sortedDocs.forEach(({ id, data }) => {
+            const div = document.createElement("div");
+            
+            // Status styling
+            let statusClass = "status-pending";
+            let statusBadge = "badge-pending";
+            let statusText = "Pending";
+            
+            if (data.status === "completed") {
+                statusClass = "status-completed";
+                statusBadge = "badge-completed";
+                statusText = "Completed";
+            } else if (data.status === "inprogress") {
+                statusClass = "status-inprogress";
+                statusBadge = "badge-inprogress";
+                statusText = "In Progress";
+            }
+            
+            div.className = `item ${statusClass}`;
+            
+            // Build HTML - ALL FIELDS DYNAMICALLY
+            let htmlContent = `
+                <h4>${data.customerName || data.name || "Customer"} 
+                    <span class="status-badge ${statusBadge}">${statusText.toUpperCase()}</span>
+                </h4>`;
+            
+            // Display ALL fields dynamically
+            for (const [key, value] of Object.entries(data)) {
+                // Skip some fields
+                if (key === "id" || key === "timestamp" || key === "createdAt" || key === "updatedAt") continue;
+                
+                // Format key name
+                const displayKey = key.replace(/([A-Z])/g, ' $1')
+                                    .replace(/\./g, ' ')
+                                    .replace(/^./, str => str.toUpperCase());
+                
+                // Format value
+                let displayValue = value;
+                if (Array.isArray(value)) {
+                    displayValue = '<ul>' + value.map(item => `<li>${item}</li>`).join('') + '</ul>';
+                } else if (typeof value === 'object' && value !== null) {
+                    displayValue = JSON.stringify(value);
+                }
+                
+                // Special styling for important fields
+                if (key.includes("Bill") && typeof value === 'number') {
+                    htmlContent += `
+                        <div class="field">
+                            <span class="field-name">${displayKey}:</span>
+                            <span class="field-value" style="color: #e91e63; font-weight: bold;">₹${value}</span>
+                        </div>`;
+                } else if (key.includes("Date")) {
+                    htmlContent += `
+                        <div class="field">
+                            <span class="field-name">${displayKey}:</span>
+                            <span class="field-value" style="color: #2196f3;">${value}</span>
+                        </div>`;
+                } else {
+                    htmlContent += `
+                        <div class="field">
+                            <span class="field-name">${displayKey}:</span>
+                            <span class="field-value">${displayValue}</span>
+                        </div>`;
+                }
+            }
+            
+            // Add document ID
+            htmlContent += `
+                <div class="field" style="border: none; margin-top: 15px; padding-top: 10px; border-top: 1px solid #eee;">
+                    <span class="field-name">Document ID:</span>
+                    <span class="field-value" style="font-size: 12px; color: #888;">${id.substring(0, 8)}...</span>
+                </div>
+            `;
+            
+            div.innerHTML = htmlContent;
+            resultsDiv.appendChild(div);
+        });
+        
+    } catch (error) {
+        console.error("❌ Error checking service status:", error);
+        resultsDiv.innerHTML = `
+            <div class="error">
+                <h4>❌ Error Loading Service Status</h4>
+                <p>${error.message}</p>
+            </div>`;
+    }
+}
+
+// Real-time Showroom Availability
+async function listenShowroom() {
+    const d = localStorage.getItem("district") || "erode";
+    const c = localStorage.getItem("city") || "gobichettipalayam";
+    
+    const showroomList = document.getElementById("showroomList");
+    const topLoc = document.getElementById("showroomLocation");
+    
+    showroomList.innerHTML = "<div class='loading'>Loading showrooms...</div>";
+    topLoc.innerHTML = `<b>District:</b> ${d.toUpperCase()}<br><b>City:</b> ${c.toUpperCase()}`;
+    
+    try {
+        const colRef = collection(db, "showroomavailability");
+        
+        onSnapshot(colRef, (snap) => {
+            showroomList.innerHTML = "";
+            
+            if (snap.empty) {
+                showroomList.innerHTML = `<div class="error">No showrooms found</div>`;
+                return;
+            }
+            
+            let found = false;
+            snap.forEach(doc => {
+                const data = doc.data();
+                
+                if (data.district && data.city && 
+                    data.district.toLowerCase() === d.toLowerCase() && 
+                    data.city.toLowerCase() === c.toLowerCase()) {
+                    
+                    found = true;
+                    const div = document.createElement("div");
+                    div.className = "item";
+                    
+                    let htmlContent = `<h4>🏢 ${data.showroomname || "Bike Showroom"}</h4>`;
+                    
+                    // Display all fields
+                    for (const [key, value] of Object.entries(data)) {
+                        if (key === "district" || key === "city") continue;
+                        
+                        const displayKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                        let displayValue = value;
+                        if (Array.isArray(value)) {
+                            displayValue = value.join(", ");
+                        }
+                        
+                        htmlContent += `
+                            <div class="field">
+                                <span class="field-name">${displayKey}:</span>
+                                <span class="field-value">${displayValue}</span>
+                            </div>
+                        `;
+                    }
+                    
+                    div.innerHTML = htmlContent;
+                    showroomList.appendChild(div);
+                }
+            });
+            
+            if (!found) {
+                showroomList.innerHTML = `<div class="error">No showrooms found for this location</div>`;
+            }
+        });
+        
+    } catch (error) {
+        showroomList.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+    }
+}
+
+// Real-time Mechanic Availability
+async function listenMechanics() {
+    const d = localStorage.getItem("district") || "erode";
+    const c = localStorage.getItem("city") || "gobichettipalayam";
+    
+    const mechanicList = document.getElementById("mechanicList");
+    const topLoc = document.getElementById("mechanicLocation");
+    
+    mechanicList.innerHTML = "<div class='loading'>Loading mechanics...</div>";
+    topLoc.innerHTML = `<b>District:</b> ${d.toUpperCase()}<br><b>City:</b> ${c.toUpperCase()}`;
+    
+    try {
+        const colRef = collection(db, "mechanicavailability");
+        
+        onSnapshot(colRef, (snap) => {
+            mechanicList.innerHTML = "";
+            
+            if (snap.empty) {
+                mechanicList.innerHTML = `<div class="error">No mechanics found</div>`;
+                return;
+            }
+            
+            let found = false;
+            snap.forEach(doc => {
+                const data = doc.data();
+                
+                if (data.district && data.city && 
+                    data.district.toLowerCase() === d.toLowerCase() && 
+                    data.city.toLowerCase() === c.toLowerCase()) {
+                    
+                    found = true;
+                    const div = document.createElement("div");
+                    div.className = "item";
+                    
+                    let htmlContent = `<h4>🛠 ${data.mechanicname || "Bike Mechanic"}</h4>`;
+                    
+                    // Display all fields
+                    for (const [key, value] of Object.entries(data)) {
+                        if (key === "district" || key === "city") continue;
+                        
+                        const displayKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                        let displayValue = value;
+                        if (Array.isArray(value)) {
+                            displayValue = value.join(", ");
+                        }
+                        
+                        htmlContent += `
+                            <div class="field">
+                                <span class="field-name">${displayKey}:</span>
+                                <span class="field-value">${displayValue}</span>
+                            </div>
+                        `;
+                    }
+                    
+                    div.innerHTML = htmlContent;
+                    mechanicList.appendChild(div);
+                }
+            });
+            
+            if (!found) {
+                mechanicList.innerHTML = `<div class="error">No mechanics found for this location</div>`;
+            }
+        });
+        
+    } catch (error) {
+        mechanicList.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+    }
+}
+
+// Booking Service → Firestore
+async function bookService() {
+    try {
+        const name = document.getElementById("name").value.trim();
+        const phone = document.getElementById("phone").value.trim();
+        const model = document.getElementById("model").value.trim();
+        const bike = document.getElementById("bikeNumber").value.trim();
+        const date = document.getElementById("serviceDate").value;
+        
+        if (!name || !phone || !model || !bike || !date) {
+            alert("Please fill all fields!");
+            return;
+        }
+        
+        const bookingData = {
+            customerName: name,
+            phone: phone,
+            bikeModel: model,
+            bikeNumber: bike,
+            serviceDate: date,
+            serviceType: "General Service",
+            district: localStorage.getItem("district") || "erode",
+            city: localStorage.getItem("city") || "gobichettipalayam",
+            status: "pending",
+            servicesRequested: ["General Service"],
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+        
+        // Add to servicestatus collection
+        const docRef = await addDoc(collection(db, "servicestatus"), bookingData);
+        
+        console.log("✅ Service booked with ID:", docRef.id);
+        
+        alert(`✅ Service Booked Successfully!\n\nBooking ID: ${docRef.id.substring(0, 8)}...\n\nYou can check your service status using phone: ${phone}`);
+        
+        // Clear form
+        document.getElementById("name").value = "";
+        document.getElementById("phone").value = "";
+        document.getElementById("model").value = "";
+        document.getElementById("bikeNumber").value = "";
+        document.getElementById("serviceDate").value = "";
+        
+    } catch (error) {
+        console.error("❌ Booking error:", error);
+        alert("❌ Error in booking: " + error.message);
+    }
+}
+
+// Auto create data on page load
+autoCreateServiceData();
+</script>
+
+<script>
+// NON-MODULE JAVASCRIPT
+const citiesData = {
+    erode: ["gobichettipalayam", "sathy", "anthiyur"],
+    chennai: ["thambaram", "vadapalani"]
+};
+
+function updateCities() {
+    const district = document.getElementById("district").value;
+    const citySelect = document.getElementById("city");
+    citySelect.innerHTML = "<option value=''>-- Select City --</option>";
+    if (citiesData[district]) {
+        citiesData[district].forEach(city => {
+            const opt = document.createElement("option");
+            opt.value = city.toLowerCase();
+            opt.textContent = city.charAt(0).toUpperCase() + city.slice(1);
+            citySelect.appendChild(opt);
+        });
+    }
+}
+
+function goServicePage() {
+    const d = document.getElementById("district").value;
+    const c = document.getElementById("city").value;
+    if (!d || !c) { 
+        alert("Please select district and city!"); 
+        return; 
+    }
+
+    localStorage.setItem("district", d.toLowerCase());
+    localStorage.setItem("city", c.toLowerCase());
+
+    showPage("page-services");
+    updateTopLocations();
+}
+
+function showPage(id) {
+    document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+}
+
+function updateTopLocations() {
+    const d = localStorage.getItem("district") || "erode";
+    const c = localStorage.getItem("city") || "gobichettipalayam";
+    
+    // Update all location displays except page 1
+    const locationElements = [
+        'showLocation',
+        'showroomLocation', 
+        'mechanicLocation',
+        'showLocation3',
+        'showLocation4'
+    ];
+    
+    locationElements.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.innerHTML = `<b>📍 Selected Location:</b><br>District: ${d.toUpperCase()}<br>City: ${c.toUpperCase()}`;
+        }
+    });
+}
+
+// LOGOUT FUNCTION - இது உங்கள் login.html ஐ நோக்கி செல்லும்
+function logout() {
+    if (confirm("Are you sure you want to logout?")) {
+        // Clear all localStorage data
+        localStorage.clear();
+        
+        // Redirect to login.html
+        window.location.href = "login.html";
+    }
+}
+
+// Initialize on page load
+window.onload = function() {
+    console.log("🚀 Smart Bike Service System loaded");
+    updateCities();
+    
+    if (!localStorage.getItem("district")) {
+        localStorage.setItem("district", "erode");
+        localStorage.setItem("city", "gobichettipalayam");
+    }
+    
+    updateTopLocations();
+};
+</script>
+
+</body>
+</html>
